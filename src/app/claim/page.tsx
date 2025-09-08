@@ -555,7 +555,7 @@ export default function ClaimPage() {
                         onClick={async () => {
                           setWalletError(null);
                           if (!isInstalled()) {
-                            setWalletError("No compatible wallet detected.");
+                            setWalletError("No compatible wallet detected. You may need to install Lace Midnight preview wallet or refresh page.");
                             return;
                           }
                           const w = await connectWallet();
