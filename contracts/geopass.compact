@@ -1,0 +1,77 @@
+pragma language_version 0.17;
+
+import CompactStandardLibrary;
+
+// GeoPass: Privacy-preserving geofence claim contract
+// Allows users to prove they are within a geographic area without revealing exact coordinates
+// Each device can only claim once per event (enforced by nullifier)
+
+// Ledger state (on-chain storage)
+export ledger usedNullifiers: Set<Bytes<32>>;
+export ledger round: Counter;
+export ledger eventId: Bytes<32>;
+// Latitude/longitude are stored as unsigned 32-bit integers.
+// Client offsets raw values (e.g. +90e6, +180e6) so they fit in Uint<32>.
+export ledger latMin: Uint<32>;
+export ledger latMax: Uint<32>;
+export ledger lonMin: Uint<32>;
+export ledger lonMax: Uint<32>;
+
+// Initialize contract with event details and geofence boundaries
+constructor(
+  eventId_: Bytes<32>,
+  latMin_: Uint<32>,
+  latMax_: Uint<32>,
+  lonMin_: Uint<32>,
+  lonMax_: Uint<32>
+) {
+  eventId = disclose(eventId_);
+  latMin = disclose(latMin_);
+  latMax = disclose(latMax_);
+  lonMin = disclose(lonMin_);
+  lonMax = disclose(lonMax_);
+  // usedNullifiers is initialized as empty set by default
+  // round is initialized as 0 by default
+}
+
+// Local witness function to retrieve device secret
+// This is implemented in the client-side TypeScript
+witness deviceSecret(): Bytes<32>;
+
+// Derives a unique nullifier for this device+event combination
+// Prevents double-claiming while preserving privacy
+circuit deriveNullifier(
+  round: Field,
+  deviceSecret: Bytes<32>,
+  eventId: Bytes<32>
+): Bytes<32> {
+  return persistentHash<Vector<4, Bytes<32>>>([
+    pad(32, "midnight:geopass:nullifier"),
+    round as Bytes<32>,
+    deviceSecret,
+    eventId
+  ]);
+}
+
+// Main entry point for claiming presence in a geofence
+// Coordinates are provided in integer format (e.g., latitude/longitude * 10^6)
+export circuit claim(latE6: Uint<32>, lonE6: Uint<32>): [] {
+  // Verify coordinates are within the geofence
+  assert(latE6 >= latMin, "Latitude below minimum boundary");
+  assert(latE6 <= latMax, "Latitude above maximum boundary");
+  assert(lonE6 >= lonMin, "Longitude below minimum boundary");
+  assert(lonE6 <= lonMax, "Longitude above maximum boundary");
+  
+  // Get device secret and compute nullifier
+  const secret = deviceSecret();
+  const nullifier = deriveNullifier(round, secret, eventId);
+  
+  // Ensure this device hasn't already claimed for this event
+  assert(usedNullifiers.member(disclose(nullifier)) == false, "Already claimed for this event");
+  
+  // Record the claim and increment round
+  usedNullifiers.insert(disclose(nullifier));
+  round.increment(1);
+  
+  return [];
+}

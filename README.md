@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GeoPass
+
+Privacy-first geofenced access & ticketing built for the Midnight Network hackathon.
+
+## Overview
+GeoPass lets users prove “I am inside this event area” without revealing exact GPS coordinates.  
+Proofs are generated client-side and (soon) verified on-chain via Midnight’s privacy smart contracts.
+
+## Features
+- 📍 Geofence preview with MapLibre GL  
+- 🔒 Local GPS capture & geohash eligibility check  
+- 🛠️ Mock ZK proof + nullifier generation (placeholder)  
+- ✨ Responsive, accessible UI (Next.js + Tailwind)  
+
+## Tech Stack
+- Front-end: Next.js 15 (App Router), React 19, Tailwind CSS
+- Mapping: MapLibre GL, ngeohash
+- ZK / Blockchain (planned): MidnightJS SDK, Compact circuits, Midnight Testnet
+- Tooling: TypeScript, ESLint, Turbopack
+
+## Compact toolchain
+The Compact compiler + developer tools are required to build and deploy the
+GeoPass smart contract.
+
+1. **Install developer tools**  
+   ```bash
+   curl --proto '=https' --tlsv1.2 -LsSf \
+     https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
+   ```
+2. **Update to the latest toolchain version**  
+   ```bash
+   compact update          # fetches / switches to newest compiler
+   ```
+3. **Compile the contract**  
+   ```bash
+   compact compile contracts/geopass.compact contracts/build
+   ```
+
+> **Coordinate encoding**  
+> The contract stores latitude / longitude as `Uint<32>`.  
+> Convert real coordinates (° × 1 000 000) to unsigned values before calling
+> the `claim` circuit:  
+> • `latE6_uint = latE6 + 90_000_000`  
+> • `lonE6_uint = lonE6 + 180_000_000`
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# clone & install
+npm install
+# dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# production build
+npm run build && npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 and follow the Claim flow.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Current Status
+✔️ UI, geofence demo, mock proof flow implemented  
+⚠️ Midnight integration **not yet wired** – see roadmap.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Roadmap
+1. ☑️ Scaffold UI & local eligibility check  
+2. ☐ Set up Midnight dev env (MidnightJS, wallet, tDUST)  
+3. ☐ Write Compact circuit: geohash-prefix proof + event nullifier  
+4. ☐ Deploy verifier contract on Midnight Testnet  
+5. ☐ Connect wallet & submit proof from UI  
+6. ☐ Write full tutorial & publish submission
 
-## Learn More
+## Midnight Docs & Wallet
+Helpful links while integrating with the Midnight stack:
 
-To learn more about Next.js, take a look at the following resources:
+- 📚 Official docs <https://docs.midnight.network/>
+- 📄 Compact language reference <https://docs.midnight.network/develop/reference/compact/>
+- 💧 Testnet faucet <https://midnight.network/test-faucet>
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+> **Security note**  
+> Never commit seed phrases, private keys, or other wallet secrets to the repository.  
+> The test wallet used during development is **local-only** and should be kept out of version control.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+Apache License 2.0 – see `LICENSE` for details.
